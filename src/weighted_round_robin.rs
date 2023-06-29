@@ -86,7 +86,6 @@ mod weighted_round_robin_test {
             .map(|(id, weight)| {
                 Node {
                     id: id,
-                    down: false,
                     weight,
                 }
             })
@@ -134,7 +133,6 @@ mod weighted_round_robin_test {
             if i == 1 {
                 balancer.add_node(Node {
                     id: 4,
-                    down: false,
                     weight: 1,
                 });
             }

@@ -42,7 +42,6 @@ mod random_test {
         let nodes = nodes.into_iter().map(|id| Node {
             id,
             weight: 1,
-            down: false,
         }).collect();
         let mut balancer = Random::new(nodes);
         for _ in 0..50 {

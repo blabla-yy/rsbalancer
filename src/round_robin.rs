@@ -43,10 +43,6 @@ impl<T: Hash> Balancer<T> for RoundRobin<T> {
 
 #[cfg(test)]
 mod round_robin_test {
-    
-    
-    
-
     use crate::{Balancer, Node};
     use crate::round_robin::RoundRobin;
 
@@ -56,7 +52,6 @@ mod round_robin_test {
         let nodes = nodes.into_iter().map(|id| Node {
             id,
             weight: 1,
-            down: false
         }).collect();
         let mut balancer = RoundRobin::new(nodes);
         for i in 0..20 {
@@ -70,7 +65,6 @@ mod round_robin_test {
         let nodes = nodes.into_iter().map(|id| Node {
             id,
             weight: 1,
-            down: false
         }).collect();
         let mut balancer = RoundRobin::new(nodes);
         for i in 0..10 {
@@ -79,7 +73,6 @@ mod round_robin_test {
             if i == 1 {
                 balancer.add_node(Node {
                     id: 4,
-                    down: false,
                     weight: 0,
                 });
             }
