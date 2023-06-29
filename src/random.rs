@@ -1,10 +1,6 @@
 use std::hash::Hash;
-use std::ops::Deref;
-
 use rand::Rng;
-
 use crate::{Balancer, Node};
-use crate::round_robin::RoundRobin;
 
 pub struct Random<T: Hash> {
     nodes: Vec<Node<T>>,

@@ -43,9 +43,9 @@ impl<T: Hash> Balancer<T> for RoundRobin<T> {
 
 #[cfg(test)]
 mod round_robin_test {
-    use std::collections::HashMap;
-    use std::ops::{Deref, Index};
-    use std::sync::{Arc, Mutex};
+    
+    
+    
 
     use crate::{Balancer, Node};
     use crate::round_robin::RoundRobin;
