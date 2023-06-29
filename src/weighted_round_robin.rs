@@ -2,12 +2,12 @@ use std::hash::Hash;
 
 use crate::{Balancer, Node};
 
-struct WeightedRoundRobin<T: Hash> {
+pub struct WeightedRoundRobin<T: Hash> {
     nodes: Vec<WeightedNode<T>>,
 }
 
 impl<T: Hash> WeightedRoundRobin<T> {
-    fn new(nodes: Vec<Node<T>>) -> WeightedRoundRobin<T> {
+    pub fn new(nodes: Vec<Node<T>>) -> WeightedRoundRobin<T> {
         let nodes = nodes.into_iter()
             .map(|node| {
                 WeightedNode::new(node)
