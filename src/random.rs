@@ -28,6 +28,8 @@ impl<T: Hash> Balancer<T> for Random<T> {
         let index = rand::thread_rng().gen_range(0..len);
         self.nodes.get(index)
     }
+
+
 }
 
 
@@ -39,10 +41,7 @@ mod random_test {
     #[test]
     fn simple() {
         let nodes = vec![1, 2, 3, 4, 5];
-        let nodes = nodes.into_iter().map(|id| Node {
-            id,
-            weight: 1,
-        }).collect();
+        let nodes = nodes.into_iter().map(|id| Node::new_with_default_weight(id)).collect();
         let mut balancer = Random::new(nodes);
         for _ in 0..50 {
             assert!(balancer.next().is_some());

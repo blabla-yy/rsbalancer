@@ -6,6 +6,11 @@ A rust library that implements load balancing algorithms.
 - weighted round-robin(like nginx)
 - random
 
+### installation
+```shell
+cargo add rsbalancer
+```
+
 ### usage
 
 ```rust

@@ -49,10 +49,7 @@ mod round_robin_test {
     #[test]
     fn simple() {
         let nodes = vec![1, 2, 3, 4, 5];
-        let nodes = nodes.into_iter().map(|id| Node {
-            id,
-            weight: 1,
-        }).collect();
+        let nodes = nodes.into_iter().map(|id| Node::new_with_default_weight(id)).collect();
         let mut balancer = RoundRobin::new(nodes);
         for i in 0..20 {
             assert_eq!((i % 5) + 1, balancer.next().unwrap().id);
@@ -62,21 +59,15 @@ mod round_robin_test {
     #[test]
     fn add_node() {
         let nodes = vec![1, 2, 3];
-        let nodes = nodes.into_iter().map(|id| Node {
-            id,
-            weight: 1,
-        }).collect();
+        let nodes = nodes.into_iter().map(|id| Node::new_with_default_weight(id)).collect();
         let mut balancer = RoundRobin::new(nodes);
         for i in 0..10 {
-            let n = balancer.next().unwrap().id;
-            println!("result: {}", n);
+            let id = balancer.next().unwrap().id;
             if i == 1 {
-                balancer.add_node(Node {
-                    id: 4,
-                    weight: 0,
-                });
+                balancer.add_node(Node::new_with_default_weight(4));
             }
-            // assert_eq!((i % 5) + 1, *balancer.next().unwrap());
+            println!("{}", id);
+            assert_eq!((i % 4) + 1, id);
         }
     }
 

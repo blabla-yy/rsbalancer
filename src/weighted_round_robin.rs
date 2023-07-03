@@ -84,10 +84,7 @@ mod weighted_round_robin_test {
     fn map_nodes(array: Vec<(i32, i32)>) -> Vec<Node<i32>> {
         array.into_iter()
             .map(|(id, weight)| {
-                Node {
-                    id: id,
-                    weight,
-                }
+                Node::new(id, weight).unwrap()
             })
             .collect()
     }
@@ -131,10 +128,7 @@ mod weighted_round_robin_test {
             println!("id:{}", id);
             map.entry(id).and_modify(|v| *v += 1);
             if i == 1 {
-                balancer.add_node(Node {
-                    id: 4,
-                    weight: 1,
-                });
+                balancer.add_node(Node::new(4, 1).unwrap());
             }
         }
         for (i, v) in map {

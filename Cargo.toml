@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 description = "A rust library that implements load balancing algorithms."
 license = "MIT"
+homepage = "https://github.com/blabla-yy/rsbalancer"
+repository = "https://github.com/blabla-yy/rsbalancer"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
