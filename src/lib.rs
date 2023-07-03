@@ -1,7 +1,6 @@
-use std::error::Error;
-use std::fmt;
 use std::hash::Hash;
 
+use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::random::Random;
 use crate::round_robin::RoundRobin;
 use crate::weighted_round_robin::WeightedRoundRobin;
@@ -9,37 +8,66 @@ use crate::weighted_round_robin::WeightedRoundRobin;
 mod round_robin;
 mod random;
 mod weighted_round_robin;
+mod nodes;
+mod errors;
 
 
-pub trait Balancer<T: Hash> {
-    fn add_node(&mut self, node: Node<T>);
+pub trait Balancer<T: Hash + Eq + Copy> {
+    fn add_node(&mut self, node: Node<T>) -> Result<(), DuplicatedKeyError>;
+    fn remove_node(&mut self, id: &T) -> Result<(), NotFoundError>;
+    fn contains_id(&mut self, id: &T) -> bool;
+    fn get_node(&self, id: &T) -> Option<&Node<T>>;
+    fn get_nodes(&self) -> Vec<&Node<T>>;
+
+    fn set_down(&mut self, id: &T, down: bool) -> Result<(), NotFoundError>;
     fn next(&mut self) -> Option<&Node<T>>;
     fn next_id(&mut self) -> Option<&T> {
         self.next().map(|n| &n.id)
     }
 }
 
-pub struct Node<T: Hash> {
+pub struct Node<T: Hash + Eq + Copy> {
     id: T,
     weight: i32,
+    down: bool,
+    current_weight: i32,
+    effective_weight: i32,
 }
 
-impl<T: Hash> Node<T> {
+impl<T: Hash + Eq + Copy> Node<T> {
     pub fn new_with_default_weight(id: T) -> Node<T> {
         Node {
             id,
             weight: 1,
+            down: false,
+            current_weight: 0,
+            effective_weight: 1,
         }
     }
 
-    pub fn new(id: T, weight: i32) -> Result<Node<T>, ParameterError> {
+    pub fn new(id: T, weight: i32) -> Result<Node<T>, errors::ParameterError> {
         if weight <= 0 {
-            return Err(ParameterError::new("weight <= 0"));
+            return Err(errors::ParameterError::new("weight <= 0"));
         }
         Ok(Node {
             id,
             weight,
+            down: false,
+            current_weight: 0,
+            effective_weight: weight,
         })
+    }
+
+    pub fn get_id(&self) -> T {
+        self.id
+    }
+
+    pub fn get_weight(&self) -> i32 {
+        self.weight
+    }
+
+    pub fn is_down(&self) -> bool {
+        self.down
     }
 }
 
@@ -49,7 +77,7 @@ pub enum BalanceType {
     Random,
 }
 
-pub fn new<'a, T: Hash + 'a>(balance_type: BalanceType, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
+pub fn new<'a, T: Hash + Eq + Copy + 'a>(balance_type: BalanceType, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
     match balance_type {
         BalanceType::RR => {
             Box::new(RoundRobin::new(nodes))
@@ -63,27 +91,3 @@ pub fn new<'a, T: Hash + 'a>(balance_type: BalanceType, nodes: Vec<Node<T>>) -> 
     }
 }
 
-#[derive(Debug)]
-pub struct ParameterError {
-    message: String,
-}
-
-impl ParameterError {
-    fn new(message: &str) -> ParameterError {
-        ParameterError {
-            message: message.to_string(),
-        }
-    }
-}
-
-impl fmt::Display for ParameterError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ParameterError: {}", self.message)
-    }
-}
-
-impl Error for ParameterError {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}

@@ -1,44 +1,44 @@
 use std::hash::Hash;
 
 use crate::{Balancer, Node};
+use crate::errors::{DuplicatedKeyError, NotFoundError};
+use crate::nodes::NodesContainer;
 
-pub struct WeightedRoundRobin<T: Hash> {
-    nodes: Vec<WeightedNode<T>>,
+pub struct WeightedRoundRobin<T: Hash + Eq + Copy> {
+    nodes: NodesContainer<T>,
 }
 
-impl<T: Hash> WeightedRoundRobin<T> {
+impl<T: Hash + Eq + Copy> WeightedRoundRobin<T> {
     pub fn new(nodes: Vec<Node<T>>) -> WeightedRoundRobin<T> {
-        let nodes = nodes.into_iter()
-            .map(|node| {
-                WeightedNode::new(node)
-            })
-            .collect();
         WeightedRoundRobin {
-            nodes
+            nodes: NodesContainer::from(nodes),
         }
     }
 }
 
-struct WeightedNode<T: Hash> {
-    data: Node<T>,
-    current_weight: i32,
-    effective_weight: i32,
-}
-
-impl<T: Hash> WeightedNode<T> {
-    fn new(data: Node<T>) -> WeightedNode<T> {
-        let weight = data.weight;
-        WeightedNode {
-            data,
-            current_weight: 0,
-            effective_weight: weight,
-        }
+impl<T: Hash + Eq + Copy> Balancer<T> for WeightedRoundRobin<T> {
+    fn add_node(&mut self, node: Node<T>) -> Result<(), DuplicatedKeyError> {
+        self.nodes.insert(node)
     }
-}
 
-impl<T: Hash> Balancer<T> for WeightedRoundRobin<T> {
-    fn add_node(&mut self, node: Node<T>) {
-        self.nodes.push(WeightedNode::new(node));
+    fn remove_node(&mut self, id: &T) -> Result<(), NotFoundError> {
+        self.nodes.remove(id).map(|_| ())
+    }
+
+    fn contains_id(&mut self, id: &T) -> bool {
+        self.nodes.get_by_id(id).is_some()
+    }
+
+    fn get_node(&self, id: &T) -> Option<&Node<T>> {
+        self.nodes.get_by_id(id)
+    }
+
+    fn get_nodes(&self) -> Vec<&Node<T>> {
+        self.nodes.get_all()
+    }
+
+    fn set_down(&mut self, id: &T, down: bool) -> Result<(), NotFoundError> {
+        self.nodes.set_down(id, down)
     }
 
     fn next(&mut self) -> Option<&Node<T>> {
@@ -48,10 +48,13 @@ impl<T: Hash> Balancer<T> for WeightedRoundRobin<T> {
         }
         let mut total = 0;
         let mut result = None;
-        for mut node in &mut self.nodes {
+        for (_, node) in self.nodes.iter_mut() {
+            if node.is_down() {
+                continue;
+            }
             node.current_weight += node.effective_weight;
             total += node.effective_weight;
-            if node.effective_weight < node.data.weight {
+            if node.effective_weight < node.weight {
                 node.effective_weight += 1;
             }
             if result.is_none() {
@@ -69,7 +72,7 @@ impl<T: Hash> Balancer<T> for WeightedRoundRobin<T> {
 
         return result.map(|node| {
             node.current_weight -= total;
-            return &node.data;
+            return &*node;
         });
     }
 }
@@ -128,7 +131,7 @@ mod weighted_round_robin_test {
             println!("id:{}", id);
             map.entry(id).and_modify(|v| *v += 1);
             if i == 1 {
-                balancer.add_node(Node::new(4, 1).unwrap());
+                balancer.add_node(Node::new(4, 1).unwrap()).unwrap();
             }
         }
         for (i, v) in map {
@@ -145,5 +148,24 @@ mod weighted_round_robin_test {
                 assert_eq!(1, v);
             }
         }
+    }
+
+
+    #[test]
+    fn down() {
+        let nodes = vec![1, 2, 3];
+        let nodes = nodes.into_iter().map(|id| Node::new_with_default_weight(id)).collect();
+        let mut balancer = WeightedRoundRobin::new(nodes);
+
+        balancer.set_down(&1, true).unwrap();
+        assert_ne!(*balancer.next_id().unwrap(), 1);
+        assert_ne!(*balancer.next_id().unwrap(), 1);
+        assert_ne!(*balancer.next_id().unwrap(), 1);
+
+        balancer.set_down(&2, true).unwrap();
+        balancer.set_down(&3, true).unwrap();
+
+        assert!(balancer.next_id().is_none());
+        assert!(balancer.next_id().is_none());
     }
 }

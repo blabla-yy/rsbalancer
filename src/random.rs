@@ -1,22 +1,46 @@
 use std::hash::Hash;
-use rand::Rng;
-use crate::{Balancer, Node};
 
-pub struct Random<T: Hash> {
-    nodes: Vec<Node<T>>,
+use rand::Rng;
+
+use crate::{Balancer, Node};
+use crate::errors::{DuplicatedKeyError, NotFoundError};
+use crate::nodes::NodesContainer;
+
+pub struct Random<T: Hash + Eq + Copy> {
+    nodes: NodesContainer<T>,
 }
 
-impl<T: Hash> Random<T> {
+impl<T: Hash + Eq + Copy> Random<T> {
     pub fn new(nodes: Vec<Node<T>>) -> Random<T> {
         Random {
-            nodes,
+            nodes: NodesContainer::from(nodes),
         }
     }
 }
 
-impl<T: Hash> Balancer<T> for Random<T> {
-    fn add_node(&mut self, node: Node<T>) {
-        self.nodes.push(node);
+impl<T: Hash + Eq + Copy> Balancer<T> for Random<T> {
+    fn add_node(&mut self, node: Node<T>) -> Result<(), DuplicatedKeyError> {
+        self.nodes.insert(node)
+    }
+
+    fn remove_node(&mut self, id: &T) -> Result<(), NotFoundError> {
+        self.nodes.remove(id).map(|_| ())
+    }
+
+    fn contains_id(&mut self, id: &T) -> bool {
+        self.nodes.get_by_id(id).is_some()
+    }
+
+    fn get_node(&self, id: &T) -> Option<&Node<T>> {
+        self.nodes.get_by_id(id)
+    }
+
+    fn get_nodes(&self) -> Vec<&Node<T>> {
+        self.nodes.get_all()
+    }
+
+    fn set_down(&mut self, id: &T, down: bool) -> Result<(), NotFoundError> {
+        self.nodes.set_down(id, down)
     }
 
     fn next(&mut self) -> Option<&Node<T>> {
@@ -25,11 +49,26 @@ impl<T: Hash> Balancer<T> for Random<T> {
             return None;
         }
 
-        let index = rand::thread_rng().gen_range(0..len);
-        self.nodes.get(index)
+        let mut index = rand::thread_rng().gen_range(0..len);
+        let init = index;
+        //todo
+        while let Some(node) = self.nodes.get_by_index(index) {
+            if node.is_down() {
+                index = if index >= len - 1 {
+                    0
+                } else {
+                    index + 1
+                };
+                // all is down.
+                if index == init {
+                    break;
+                }
+                continue;
+            }
+            return Some(node);
+        }
+        return None;
     }
-
-
 }
 
 
@@ -46,5 +85,22 @@ mod random_test {
         for _ in 0..50 {
             assert!(balancer.next().is_some());
         }
+    }
+
+    #[test]
+    fn down() {
+        let nodes = vec![1, 2];
+        let nodes = nodes.into_iter().map(|id| Node::new_with_default_weight(id)).collect();
+        let mut balancer = Random::new(nodes);
+        assert!(balancer.next().is_some());
+
+        balancer.set_down(&1, true).unwrap();
+        assert_eq!(*balancer.next_id().unwrap(), 2);
+        assert_eq!(*balancer.next_id().unwrap(), 2);
+
+        balancer.set_down(&2, true).unwrap();
+
+        assert!(balancer.next_id().is_none());
+        assert!(balancer.next_id().is_none());
     }
 }
