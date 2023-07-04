@@ -1,7 +1,7 @@
-use rsbalancer::{BalanceType, Node};
+use rsbalancer::{BalancerEnum, Node};
 
 fn main() {
-    let mut balancer = rsbalancer::new(BalanceType::RR, vec![
+    let mut balancer = rsbalancer::new(BalancerEnum::RR, vec![
         Node::new_with_default_weight(1),
         Node::new_with_default_weight(2),
         Node::new_with_default_weight(3),
