@@ -126,9 +126,11 @@ mod weighted_round_robin_test {
         ]));
 
         let mut map = HashMap::from([(1, 0), (2, 0), (3, 0)]);
-        for i in 0..10 {
+        let mut prev = -1;
+        for i in 0..14 {
             let id = balancer.next().unwrap().id;
-            println!("id:{}", id);
+            assert_ne!(id, prev);
+            prev = id;
             map.entry(id).and_modify(|v| *v += 1);
             if i == 1 {
                 balancer.add_node(Node::new(4, 1).unwrap()).unwrap();
@@ -136,16 +138,16 @@ mod weighted_round_robin_test {
         }
         for (i, v) in map {
             if i == 1 {
-                assert_eq!(5, v);
+                assert_eq!(6, v);
             }
             if i == 2 {
-                assert_eq!(3, v);
+                assert_eq!(4, v);
             }
             if i == 3 {
-                assert_eq!(1, v);
+                assert_eq!(2, v);
             }
             if i == 4 {
-                assert_eq!(1, v);
+                assert_eq!(2, v);
             }
         }
     }

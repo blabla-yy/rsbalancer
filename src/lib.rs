@@ -71,21 +71,21 @@ impl<T: Hash + Eq + Copy> Node<T> {
     }
 }
 
-pub enum BalanceType {
+pub enum BalancerEnum {
     RR,
     WRR,
     Random,
 }
 
-pub fn new<'a, T: Hash + Eq + Copy + 'a>(balance_type: BalanceType, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
-    match balance_type {
-        BalanceType::RR => {
+pub fn new<'a, T: Hash + Eq + Copy + 'a>(balancer_enum: BalancerEnum, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
+    match balancer_enum {
+        BalancerEnum::RR => {
             Box::new(RoundRobin::new(nodes))
         }
-        BalanceType::WRR => {
+        BalancerEnum::WRR => {
             Box::new(WeightedRoundRobin::new(nodes))
         }
-        BalanceType::Random => {
+        BalancerEnum::Random => {
             Box::new(Random::new(nodes))
         }
     }

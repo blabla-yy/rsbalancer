@@ -105,7 +105,6 @@ mod round_robin_test {
             if i == 1 {
                 balancer.add_node(Node::new_with_default_weight(4)).unwrap();
             }
-            println!("{}", id);
             assert_eq!((i % 4) + 1, id);
         }
     }
