@@ -50,10 +50,10 @@ fn main() {
         println!(
             "{} == {}",
             balancer
-                .get_matching_node_id(random_ip.to_string())
+                .get_matching_node_id(&random_ip.to_string())
                 .unwrap(),
             balancer
-                .get_matching_node(random_ip.to_string())
+                .get_matching_node(&random_ip.to_string())
                 .unwrap()
                 .get_id()
         );
