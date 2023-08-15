@@ -35,7 +35,9 @@ impl ConsistentHashing {
             count
         }
     }
-
+    pub fn get_matching_node_id(&self, request: String) -> Option<&String> {
+        self.get_matching_node(request).map(|item| &item.id)
+    }
     /// return none if empty nodes.
     pub fn get_matching_node(&self, request: String) -> Option<&Node<String>> {
         if self.nodes.is_empty() {
@@ -139,7 +141,7 @@ mod consistent_hash_test {
     use super::ConsistentHashing;
 
     #[test]
-    fn get_all() {
+    fn get() {
         let balancer = ConsistentHashing::new(
             vec![
                 Node::new_with_default_weight("1".to_string()),
@@ -148,14 +150,26 @@ mod consistent_hash_test {
             ],
             10,
         );
-
-        let mut i = 1;
-        for item in balancer.get_nodes() {
-            // assert_eq!(item.id, i.to_string());
-            println!("id: {}", item.id);
-            i += 1;
-        }
+        assert_eq!(balancer.get_nodes().len(), 3);
+        assert!(balancer.get_node(&"1".to_string()).is_some());
+        assert!(balancer.get_node(&"4".to_string()).is_none());
     }
+
+    #[test]
+    fn remove() {
+        let mut balancer = ConsistentHashing::new(
+            vec![
+                Node::new_with_default_weight("1".to_string()),
+                Node::new_with_default_weight("2".to_string()),
+                Node::new_with_default_weight("3".to_string()),
+            ],
+            10,
+        );
+        balancer.remove_node(&"1".to_string()).unwrap();
+        assert!(balancer.get_node(&"1".to_string()).is_none());
+        assert!(balancer.get_node(&"2".to_string()).is_some());
+    }
+
     #[test]
     fn simple() {
         let mut balancer = ConsistentHashing::new(

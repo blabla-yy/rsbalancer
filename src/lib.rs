@@ -21,13 +21,10 @@ pub trait Balancer<T: Hash + Eq + Clone> {
     fn get_node(&self, id: &T) -> Option<&Node<T>>;
     fn get_nodes(&self) -> Vec<&Node<T>>;
 
-    /// unstable
     fn set_down(&mut self, id: &T, down: bool) -> Result<(), NotFoundError>;
 
     fn next(&mut self) -> Option<&Node<T>>;
-    fn next_id(&mut self) -> Option<&T> {
-        self.next().map(|n| &n.id)
-    }
+    fn next_id(&mut self) -> Option<&T>;
 }
 
 pub struct Node<T: Hash + Eq + Clone> {
@@ -71,8 +68,8 @@ impl<T: Hash + Eq + Clone> Node<T> {
         }
     }
 
-    pub fn get_id(&self) -> T {
-        self.id.clone()
+    pub fn get_id(&self) -> &T {
+        &self.id
     }
 
     pub fn get_weight(&self) -> usize {

@@ -41,6 +41,10 @@ impl<T: Hash + Eq + Clone> Balancer<T> for WeightedRoundRobin<T> {
         self.nodes.set_down(id, down)
     }
 
+    fn next_id(&mut self) -> Option<&T> {
+        self.next().map(|n| &n.id)
+    }
+    
     fn next(&mut self) -> Option<&Node<T>> {
         let len = self.nodes.len();
         if len == 0 {
