@@ -54,7 +54,7 @@ impl<T: Hash + Eq + Copy> Balancer<T> for WeightedRoundRobin<T> {
             }
             node.current_weight += node.effective_weight;
             total += node.effective_weight;
-            if node.effective_weight < node.weight {
+            if node.effective_weight < (node.weight as i32) {
                 node.effective_weight += 1;
             }
             if result.is_none() {
@@ -84,10 +84,10 @@ mod weighted_round_robin_test {
     use crate::{Balancer, Node};
     use crate::weighted_round_robin::WeightedRoundRobin;
 
-    fn map_nodes(array: Vec<(i32, i32)>) -> Vec<Node<i32>> {
+    fn map_nodes(array: Vec<(i32, usize)>) -> Vec<Node<i32>> {
         array.into_iter()
             .map(|(id, weight)| {
-                Node::new(id, weight).unwrap()
+                Node::new(id, weight)
             })
             .collect()
     }
@@ -133,7 +133,7 @@ mod weighted_round_robin_test {
             prev = id;
             map.entry(id).and_modify(|v| *v += 1);
             if i == 1 {
-                balancer.add_node(Node::new(4, 1).unwrap()).unwrap();
+                balancer.add_node(Node::new(4, 1)).unwrap();
             }
         }
         for (i, v) in map {

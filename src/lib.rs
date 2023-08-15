@@ -10,6 +10,7 @@ mod random;
 mod weighted_round_robin;
 mod nodes;
 mod errors;
+mod consistent_hash;
 
 
 pub trait Balancer<T: Hash + Eq + Copy> {
@@ -28,7 +29,7 @@ pub trait Balancer<T: Hash + Eq + Copy> {
 
 pub struct Node<T: Hash + Eq + Copy> {
     id: T,
-    weight: i32,
+    weight: usize,
     down: bool,
     current_weight: i32,
     effective_weight: i32,
@@ -45,24 +46,21 @@ impl<T: Hash + Eq + Copy> Node<T> {
         }
     }
 
-    pub fn new(id: T, weight: i32) -> Result<Node<T>, errors::ParameterError> {
-        if weight <= 0 {
-            return Err(errors::ParameterError::new("weight <= 0"));
-        }
-        Ok(Node {
+    pub fn new(id: T, weight: usize) -> Node<T> {
+        Node {
             id,
             weight,
             down: false,
             current_weight: 0,
-            effective_weight: weight,
-        })
+            effective_weight: weight as i32,
+        }
     }
 
     pub fn get_id(&self) -> T {
         self.id
     }
 
-    pub fn get_weight(&self) -> i32 {
+    pub fn get_weight(&self) -> usize {
         self.weight
     }
 
@@ -72,9 +70,17 @@ impl<T: Hash + Eq + Copy> Node<T> {
 }
 
 pub enum BalancerEnum {
+    /// Round-Robin
+    /// O(1)
     RR,
+    /// Smooth Weighted Round-Robin
+    /// O(n)
     WRR,
+    /// Random
+    /// O(1)
     Random,
+    /// ConsistentHash
+    ConsistentHash
 }
 
 pub fn new<'a, T: Hash + Eq + Copy + 'a>(balancer_enum: BalancerEnum, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
@@ -88,6 +94,7 @@ pub fn new<'a, T: Hash + Eq + Copy + 'a>(balancer_enum: BalancerEnum, nodes: Vec
         BalancerEnum::Random => {
             Box::new(Random::new(nodes))
         }
+        BalancerEnum::ConsistentHash => todo!(),
     }
 }
 
