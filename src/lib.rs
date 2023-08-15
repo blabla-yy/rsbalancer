@@ -105,7 +105,7 @@ pub fn random<T: Hash + Eq + Clone>(nodes: Vec<Node<T>>) -> Random<T> {
 
 /// ConsistentHash
 /// number of virtual nodes: replicas * node.weight.
-/// node.down not work for now.
+/// node.down does not work in ConsistentHash now.
 pub fn consistent_hash(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHash {
     ConsistentHash::new(nodes, replicas)
 }
