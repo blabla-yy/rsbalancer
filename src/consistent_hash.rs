@@ -2,7 +2,7 @@ use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::{Balancer, Node};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeMap;
-use std::hash::{self, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 
 pub struct ConsistentHash<T: Hash + Eq + Copy + ToString> {
     nodes: BTreeMap<u64, Node<T>>,
@@ -127,7 +127,7 @@ impl<T: Hash + Eq + Copy + ToString> Balancer<T> for ConsistentHash<T> {
         todo!()
     }
 
-    fn set_down(&mut self, id: &T, down: bool) -> Result<(), NotFoundError> {
+    fn set_down(&mut self, _id: &T, _down: bool) -> Result<(), NotFoundError> {
         todo!()
     }
 
@@ -144,7 +144,7 @@ mod consistent_hash_test {
 
     #[test]
     fn simple() {
-        let mut balancer = ConsistentHash::new(
+        let balancer = ConsistentHash::new(
             vec![
                 Node::new_with_default_weight("1"),
                 Node::new_with_default_weight("2"),
