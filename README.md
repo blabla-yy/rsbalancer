@@ -16,7 +16,7 @@ cargo add rsbalancer
 
 ### Weighted round robin
 ```rust
-use rsbalancer::{BalancerEnum, Node, Balancer};
+use rsbalancer::Node;
 
 fn main() {
     let mut balancer = rsbalancer::weighted_round_robin(vec![
