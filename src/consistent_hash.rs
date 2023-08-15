@@ -140,7 +140,7 @@ mod consistent_hash_test {
 
     #[test]
     fn get_all() {
-        let mut balancer = ConsistentHashing::new(
+        let balancer = ConsistentHashing::new(
             vec![
                 Node::new_with_default_weight("1".to_string()),
                 Node::new_with_default_weight("2".to_string()),
