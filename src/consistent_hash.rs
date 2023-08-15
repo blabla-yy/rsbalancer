@@ -13,16 +13,17 @@ impl ConsistentHash {
     pub fn new(
         nodes: Vec<Node<String>>,
         replicas: usize,
-    ) -> Result<ConsistentHash, DuplicatedKeyError> {
+    ) -> ConsistentHash {
         let mut balancer = ConsistentHash {
             nodes: BTreeMap::new(),
             replicas,
         };
 
         for node in nodes {
-            balancer.add_node(node)?;
+            // ignore same node
+            let _ = balancer.add_node(node);
         }
-        Ok(balancer)
+        balancer
     }
 }
 
@@ -36,12 +37,13 @@ impl ConsistentHash {
         }
     }
 
-    fn get(&self, id: String) -> Option<&Node<String>> {
+    /// return none if empty nodes.
+    pub fn get_matching_node(&self, request: String) -> Option<&Node<String>> {
         if self.nodes.is_empty() {
             return None;
         }
         let mut hasher = DefaultHasher::new();
-        id.hash(&mut hasher);
+        request.hash(&mut hasher);
         let key = hasher.finish();
 
         match self
@@ -67,7 +69,7 @@ impl ConsistentHash {
 }
 
 impl ConsistentHash {
-    fn add_node(&mut self, node: Node<String>) -> Result<(), DuplicatedKeyError> {
+    pub fn add_node(&mut self, node: Node<String>) -> Result<(), DuplicatedKeyError> {
         if self.contains_id(&node.id) {
             return Err(DuplicatedKeyError);
         }
@@ -84,7 +86,7 @@ impl ConsistentHash {
         Ok(())
     }
 
-    fn remove_node(&mut self, id: &String) -> Result<(), NotFoundError> {
+    pub fn remove_node(&mut self, id: &String) -> Result<(), NotFoundError> {
         match self.get_node(id) {
             Some(node) => {
                 let count = self.replicas_of_node(&node);
@@ -104,23 +106,20 @@ impl ConsistentHash {
         };
     }
 
-    fn contains_id(&mut self, id: &String) -> bool {
+    pub fn contains_id(&mut self, id: &String) -> bool {
         self.get_node(id).is_some()
     }
 
-    fn get_node(&self, id: &String) -> Option<&Node<String>> {
+    /// miss, return None.
+    pub fn get_node(&self, id: &String) -> Option<&Node<String>> {
         let mut hasher = DefaultHasher::new();
         id.hash(&mut hasher);
         let key = hasher.finish();
         self.nodes.get(&key)
     }
 
-    fn get_nodes(&self) -> Vec<&Node<String>> {
+    pub fn get_nodes(&self) -> Vec<&Node<String>> {
         self.nodes.values().collect()
-    }
-
-    fn set_down(&mut self, _id: &String, _down: bool) -> Result<(), NotFoundError> {
-        todo!()
     }
 }
 
@@ -139,22 +138,15 @@ mod consistent_hash_test {
                 Node::new_with_default_weight("3".to_string()),
             ],
             10,
-        )
-        .unwrap();
+        );
 
         let ip = vec!["123", "234", "122"];
         for item in ip {
-            let result = balancer.get(item.to_string()).unwrap();
+            let result = balancer.get_matching_node(item.to_string()).unwrap();
             println!("ip result: {}", result.id);
             for _ in 0..10 {
-                assert_eq!(result.id, balancer.get(item.to_string()).unwrap().id);
+                assert_eq!(result.id, balancer.get_matching_node(item.to_string()).unwrap().id);
             }
         }
     }
-
-    #[test]
-    fn add_node() {}
-
-    #[test]
-    fn down() {}
 }
