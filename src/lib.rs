@@ -38,6 +38,18 @@ pub struct Node<T: Hash + Eq + Clone> {
     effective_weight: i32,
 }
 
+impl<T: Hash + Eq + Clone> Clone for Node<T> {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id.clone(),
+            weight: self.weight.clone(),
+            down: self.down.clone(),
+            current_weight: self.current_weight.clone(),
+            effective_weight: self.effective_weight.clone(),
+        }
+    }
+}
+
 impl<T: Hash + Eq + Clone> Node<T> {
     pub fn new_with_default_weight(id: T) -> Node<T> {
         Node {

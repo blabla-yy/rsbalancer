@@ -1,11 +1,12 @@
 use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::Node;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::hash::{Hash, Hasher};
 
 pub struct ConsistentHashing {
-    nodes: BTreeMap<u64, Node<String>>,
+    nodes: BTreeMap<u64, String>,
+    user_nodes: HashMap<String, Node<String>>,
     replicas: usize,
 }
 
@@ -13,6 +14,7 @@ impl ConsistentHashing {
     pub fn new(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHashing {
         let mut balancer = ConsistentHashing {
             nodes: BTreeMap::new(),
+            user_nodes: HashMap::new(),
             replicas,
         };
 
@@ -49,11 +51,15 @@ impl ConsistentHashing {
             .next()
             .or_else(|| self.nodes.iter().next())
         {
-            Some(node) => {
-                return Some(node.1);
+            Some((_, id)) => {
+                return self.user_nodes.get(id);
             }
             None => {
-                return self.nodes.first_key_value().map(|item| item.1);
+                return self
+                    .nodes
+                    .first_key_value()
+                    .map(|(_, id)| self.user_nodes.get(id))
+                    .flatten();
             }
         }
     }
@@ -74,12 +80,13 @@ impl ConsistentHashing {
         let id = node.id.clone();
         {
             let key = self.hash(&node.id);
-            self.nodes.insert(key, node);
+            self.nodes.insert(key, id.clone());
+
+            self.user_nodes.insert(id.clone(), node);
         }
         for i in 1..count {
             let key = self.hash(&format!("{}-{}", &id, i));
-            self.nodes
-                .insert(key, Node::new_with_default_weight(id.clone()));
+            self.nodes.insert(key, id.clone());
         }
         Ok(())
     }
@@ -96,6 +103,7 @@ impl ConsistentHashing {
                     };
                     self.nodes.remove(&key);
                 }
+                self.user_nodes.remove(id);
                 return Ok(());
             }
             None => {
@@ -113,11 +121,14 @@ impl ConsistentHashing {
         let mut hasher = DefaultHasher::new();
         id.hash(&mut hasher);
         let key = hasher.finish();
-        self.nodes.get(&key)
+        self.nodes
+            .get(&key)
+            .map(|id| self.user_nodes.get(id))
+            .flatten()
     }
 
     pub fn get_nodes(&self) -> Vec<&Node<String>> {
-        self.nodes.values().collect()
+        self.user_nodes.values().collect()
     }
 }
 
@@ -128,7 +139,7 @@ mod consistent_hash_test {
     use super::ConsistentHashing;
 
     #[test]
-    fn simple() {
+    fn get_all() {
         let mut balancer = ConsistentHashing::new(
             vec![
                 Node::new_with_default_weight("1".to_string()),
@@ -138,6 +149,23 @@ mod consistent_hash_test {
             10,
         );
 
+        let mut i = 1;
+        for item in balancer.get_nodes() {
+            // assert_eq!(item.id, i.to_string());
+            println!("id: {}", item.id);
+            i += 1;
+        }
+    }
+    #[test]
+    fn simple() {
+        let mut balancer = ConsistentHashing::new(
+            vec![
+                Node::new_with_default_weight("1".to_string()),
+                Node::new_with_default_weight("2".to_string()),
+                Node::new_with_default_weight("3".to_string()),
+            ],
+            10,
+        );
         let ip = vec!["123", "234", "122"];
         let mut nodes = Vec::with_capacity(3);
         for item in &ip {
@@ -153,6 +181,8 @@ mod consistent_hash_test {
         }
 
         balancer.remove_node(&nodes.first().unwrap()).unwrap();
+        assert_eq!(2, balancer.get_nodes().len());
+
         let balancer = balancer;
         let first_ip = ip.first().unwrap();
         let node = balancer.get_matching_node(first_ip.to_string()).unwrap();
