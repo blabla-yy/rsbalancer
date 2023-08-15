@@ -35,11 +35,13 @@ impl ConsistentHashing {
             count
         }
     }
-    pub fn get_matching_node_id(&self, request: String) -> Option<&String> {
+
+    pub fn get_matching_node_id(&self, request: &String) -> Option<&String> {
         self.get_matching_node(request).map(|item| &item.id)
     }
-    /// return none if empty nodes.
-    pub fn get_matching_node(&self, request: String) -> Option<&Node<String>> {
+
+    /// return none if nodes is empty.
+    pub fn get_matching_node(&self, request: &String) -> Option<&Node<String>> {
         if self.nodes.is_empty() {
             return None;
         }
@@ -118,15 +120,9 @@ impl ConsistentHashing {
         self.get_node(id).is_some()
     }
 
-    /// miss, return None.
+    /// get node by id.
     pub fn get_node(&self, id: &String) -> Option<&Node<String>> {
-        let mut hasher = DefaultHasher::new();
-        id.hash(&mut hasher);
-        let key = hasher.finish();
-        self.nodes
-            .get(&key)
-            .map(|id| self.user_nodes.get(id))
-            .flatten()
+        self.user_nodes.get(id)
     }
 
     pub fn get_nodes(&self) -> Vec<&Node<String>> {
@@ -168,6 +164,12 @@ mod consistent_hashing_test {
         balancer.remove_node(&"1".to_string()).unwrap();
         assert!(balancer.get_node(&"1".to_string()).is_none());
         assert!(balancer.get_node(&"2".to_string()).is_some());
+
+        balancer.remove_node(&"2".to_string()).unwrap();
+        balancer.remove_node(&"3".to_string()).unwrap();
+        assert_eq!(balancer.get_nodes().len(), 0);
+        assert!(balancer.get_node(&"1".to_string()).is_none());
+        assert!(balancer.get_matching_node(&"1".to_string()).is_none());
     }
 
     #[test]
@@ -183,12 +185,12 @@ mod consistent_hashing_test {
         let ip = vec!["123", "234", "122"];
         let mut nodes = Vec::with_capacity(3);
         for item in &ip {
-            let result = balancer.get_matching_node(item.to_string()).unwrap();
+            let result = balancer.get_matching_node(&item.to_string()).unwrap();
             println!("ip result: {}", result.id);
             for _ in 0..10 {
                 assert_eq!(
                     result.id,
-                    balancer.get_matching_node(item.to_string()).unwrap().id
+                    balancer.get_matching_node(&item.to_string()).unwrap().id
                 );
             }
             nodes.push(result.id.clone());
@@ -199,7 +201,7 @@ mod consistent_hashing_test {
 
         let balancer = balancer;
         let first_ip = ip.first().unwrap();
-        let node = balancer.get_matching_node(first_ip.to_string()).unwrap();
+        let node = balancer.get_matching_node(&first_ip.to_string()).unwrap();
         assert_ne!(node.id, nodes.first().unwrap().clone());
     }
 
@@ -216,12 +218,12 @@ mod consistent_hashing_test {
         let ip = vec!["123", "234", "122"];
         let mut nodes = Vec::with_capacity(3);
         for item in &ip {
-            let result = balancer.get_matching_node(item.to_string()).unwrap();
+            let result = balancer.get_matching_node(&item.to_string()).unwrap();
             println!("ip result: {}", result.id);
             for _ in 0..10 {
                 assert_eq!(
                     result.id,
-                    balancer.get_matching_node(item.to_string()).unwrap().id
+                    balancer.get_matching_node(&item.to_string()).unwrap().id
                 );
             }
             nodes.push(result.id.clone());
@@ -232,7 +234,7 @@ mod consistent_hashing_test {
 
         let balancer = balancer;
         let first_ip = ip.first().unwrap();
-        let node = balancer.get_matching_node(first_ip.to_string()).unwrap();
+        let node = balancer.get_matching_node(&first_ip.to_string()).unwrap();
         assert_ne!(node.id, nodes.first().unwrap().clone());
     }
 }

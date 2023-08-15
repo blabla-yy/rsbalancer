@@ -174,4 +174,22 @@ mod weighted_round_robin_test {
         assert!(balancer.next_id().is_none());
         assert!(balancer.next_id().is_none());
     }
+
+    #[test]
+    fn remove() {
+        let nodes = vec![1, 2, 3];
+        let nodes = nodes.into_iter().map(|id| Node::new_with_default_weight(id)).collect();
+        let mut balancer = WeightedRoundRobin::new(nodes);
+
+        balancer.remove_node(&1).unwrap();
+        assert_ne!(*balancer.next_id().unwrap(), 1);
+        assert_ne!(*balancer.next_id().unwrap(), 1);
+        assert_ne!(*balancer.next_id().unwrap(), 1);
+
+        balancer.remove_node(&2).unwrap();
+        balancer.remove_node(&3).unwrap();
+
+        assert!(balancer.next_id().is_none());
+        assert!(balancer.next_id().is_none());
+    }
 }
