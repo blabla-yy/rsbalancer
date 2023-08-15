@@ -10,10 +10,7 @@ pub struct ConsistentHash {
 }
 
 impl ConsistentHash {
-    pub fn new(
-        nodes: Vec<Node<String>>,
-        replicas: usize,
-    ) -> ConsistentHash {
+    pub fn new(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHash {
         let mut balancer = ConsistentHash {
             nodes: BTreeMap::new(),
             replicas,
@@ -81,7 +78,8 @@ impl ConsistentHash {
         }
         for i in 1..count {
             let key = self.hash(&format!("{}-{}", &id, i));
-            self.nodes.insert(key, Node::new_with_default_weight(id.clone()));
+            self.nodes
+                .insert(key, Node::new_with_default_weight(id.clone()));
         }
         Ok(())
     }
@@ -131,7 +129,7 @@ mod consistent_hash_test {
 
     #[test]
     fn simple() {
-        let balancer = ConsistentHash::new(
+        let mut balancer = ConsistentHash::new(
             vec![
                 Node::new_with_default_weight("1".to_string()),
                 Node::new_with_default_weight("2".to_string()),
@@ -141,12 +139,23 @@ mod consistent_hash_test {
         );
 
         let ip = vec!["123", "234", "122"];
-        for item in ip {
+        let mut nodes = Vec::with_capacity(3);
+        for item in &ip {
             let result = balancer.get_matching_node(item.to_string()).unwrap();
             println!("ip result: {}", result.id);
             for _ in 0..10 {
-                assert_eq!(result.id, balancer.get_matching_node(item.to_string()).unwrap().id);
+                assert_eq!(
+                    result.id,
+                    balancer.get_matching_node(item.to_string()).unwrap().id
+                );
             }
+            nodes.push(result.id.clone());
         }
+
+        balancer.remove_node(&nodes.first().unwrap()).unwrap();
+        let balancer = balancer;
+        let first_ip = ip.first().unwrap();
+        let node = balancer.get_matching_node(first_ip.to_string()).unwrap();
+        assert_ne!(node.id, nodes.first().unwrap().clone());
     }
 }
