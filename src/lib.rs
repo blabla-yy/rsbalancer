@@ -13,7 +13,7 @@ mod errors;
 mod consistent_hash;
 
 
-pub trait Balancer<T: Hash + Eq + Copy> {
+pub trait Balancer<T: Hash + Eq + Clone> {
     fn add_node(&mut self, node: Node<T>) -> Result<(), DuplicatedKeyError>;
     fn remove_node(&mut self, id: &T) -> Result<(), NotFoundError>;
     fn contains_id(&mut self, id: &T) -> bool;
@@ -27,7 +27,7 @@ pub trait Balancer<T: Hash + Eq + Copy> {
     }
 }
 
-pub struct Node<T: Hash + Eq + Copy> {
+pub struct Node<T: Hash + Eq + Clone> {
     id: T,
     weight: usize,
     down: bool,
@@ -35,7 +35,7 @@ pub struct Node<T: Hash + Eq + Copy> {
     effective_weight: i32,
 }
 
-impl<T: Hash + Eq + Copy> Node<T> {
+impl<T: Hash + Eq + Clone> Node<T> {
     pub fn new_with_default_weight(id: T) -> Node<T> {
         Node {
             id,
@@ -57,7 +57,7 @@ impl<T: Hash + Eq + Copy> Node<T> {
     }
 
     pub fn get_id(&self) -> T {
-        self.id
+        self.id.clone()
     }
 
     pub fn get_weight(&self) -> usize {
@@ -83,7 +83,7 @@ pub enum BalancerEnum {
     ConsistentHash
 }
 
-pub fn new<'a, T: Hash + Eq + Copy + 'a>(balancer_enum: BalancerEnum, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
+pub fn new<'a, T: Hash + Eq + Clone + 'a>(balancer_enum: BalancerEnum, nodes: Vec<Node<T>>) -> Box<dyn Balancer<T> + 'a> {
     match balancer_enum {
         BalancerEnum::RR => {
             Box::new(RoundRobin::new(nodes))

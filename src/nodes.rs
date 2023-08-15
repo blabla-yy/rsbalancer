@@ -5,13 +5,13 @@ use std::hash::Hash;
 use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::Node;
 
-pub struct NodesContainer<T: Hash + Eq + Copy> {
+pub struct NodesContainer<T: Hash + Eq + Clone> {
     vec: Vec<T>,
     map: HashMap<T, Node<T>>,
 }
 
 #[allow(dead_code)]
-impl<T: Hash + Eq + Copy> NodesContainer<T> {
+impl<T: Hash + Eq + Clone> NodesContainer<T> {
     pub fn new() -> NodesContainer<T> {
         NodesContainer {
             vec: Vec::new(),
@@ -23,8 +23,8 @@ impl<T: Hash + Eq + Copy> NodesContainer<T> {
         let mut map = HashMap::new();
         let ids = nodes.into_iter()
             .map(|item| {
-                let id = item.id;
-                map.insert(item.id, item);
+                let id = item.id.clone();
+                map.insert(id.clone(), item);
                 return id;
             })
             .collect();
@@ -50,8 +50,9 @@ impl<T: Hash + Eq + Copy> NodesContainer<T> {
         if self.map.contains_key(&node.id) {
             return Err(DuplicatedKeyError);
         }
-        self.vec.push(node.id);
-        self.map.insert(node.id, node);
+        let id = node.id.clone();
+        self.vec.push(id.clone());
+        self.map.insert(id, node);
         Ok(())
     }
 
@@ -108,7 +109,7 @@ impl<T: Hash + Eq + Copy> NodesContainer<T> {
     }
 }
 
-// impl<T: Hash + Eq + Copy> NodesContainer<T> {
+// impl<T: Hash + Eq + Clone> NodesContainer<T> {
 //     pub fn iter(&mut self) -> NodesContainerIter<T> {
 //         NodesContainerIter {
 //             container: self,
@@ -117,12 +118,12 @@ impl<T: Hash + Eq + Copy> NodesContainer<T> {
 //     }
 // }
 //
-// pub struct NodesContainerIter<'a, T: Hash + Eq + Copy> {
+// pub struct NodesContainerIter<'a, T: Hash + Eq + Clone> {
 //     container: &'a mut NodesContainer<T>,
 //     index: usize,
 // }
 //
-// impl<'a, T: Hash + Eq + Copy> Iterator for NodesContainerIter<'a, T> {
+// impl<'a, T: Hash + Eq + Clone> Iterator for NodesContainerIter<'a, T> {
 //     type Item = &'a mut Node<T>;
 //
 //     fn next(&mut self) -> Option<Self::Item> {

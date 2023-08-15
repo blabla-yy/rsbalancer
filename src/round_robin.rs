@@ -4,12 +4,12 @@ use crate::{Balancer, Node};
 use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::nodes::NodesContainer;
 
-pub struct RoundRobin<T: Hash + Eq + Copy> {
+pub struct RoundRobin<T: Hash + Eq + Clone> {
     nodes: NodesContainer<T>,
     index: usize,
 }
 
-impl<T: Hash + Eq + Copy> RoundRobin<T> {
+impl<T: Hash + Eq + Clone> RoundRobin<T> {
     pub fn new(nodes: Vec<Node<T>>) -> RoundRobin<T> {
         RoundRobin {
             nodes: NodesContainer::from(nodes),
@@ -18,7 +18,7 @@ impl<T: Hash + Eq + Copy> RoundRobin<T> {
     }
 }
 
-impl<T: Hash + Eq + Copy> Balancer<T> for RoundRobin<T> {
+impl<T: Hash + Eq + Clone> Balancer<T> for RoundRobin<T> {
     fn add_node(&mut self, node: Node<T>) -> Result<(), DuplicatedKeyError> {
         self.nodes.insert(node)
     }

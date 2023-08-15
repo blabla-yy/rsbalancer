@@ -6,11 +6,11 @@ use crate::{Balancer, Node};
 use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::nodes::NodesContainer;
 
-pub struct Random<T: Hash + Eq + Copy> {
+pub struct Random<T: Hash + Eq + Clone> {
     nodes: NodesContainer<T>,
 }
 
-impl<T: Hash + Eq + Copy> Random<T> {
+impl<T: Hash + Eq + Clone> Random<T> {
     pub fn new(nodes: Vec<Node<T>>) -> Random<T> {
         Random {
             nodes: NodesContainer::from(nodes),
@@ -18,7 +18,7 @@ impl<T: Hash + Eq + Copy> Random<T> {
     }
 }
 
-impl<T: Hash + Eq + Copy> Balancer<T> for Random<T> {
+impl<T: Hash + Eq + Clone> Balancer<T> for Random<T> {
     fn add_node(&mut self, node: Node<T>) -> Result<(), DuplicatedKeyError> {
         self.nodes.insert(node)
     }
