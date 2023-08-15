@@ -4,14 +4,14 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
-pub struct ConsistentHash {
+pub struct ConsistentHashing {
     nodes: BTreeMap<u64, Node<String>>,
     replicas: usize,
 }
 
-impl ConsistentHash {
-    pub fn new(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHash {
-        let mut balancer = ConsistentHash {
+impl ConsistentHashing {
+    pub fn new(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHashing {
+        let mut balancer = ConsistentHashing {
             nodes: BTreeMap::new(),
             replicas,
         };
@@ -24,7 +24,7 @@ impl ConsistentHash {
     }
 }
 
-impl ConsistentHash {
+impl ConsistentHashing {
     fn replicas_of_node(&self, node: &Node<String>) -> usize {
         let count = node.weight * self.replicas;
         if count <= 0 {
@@ -65,7 +65,7 @@ impl ConsistentHash {
     }
 }
 
-impl ConsistentHash {
+impl ConsistentHashing {
     pub fn add_node(&mut self, node: Node<String>) -> Result<(), DuplicatedKeyError> {
         if self.contains_id(&node.id) {
             return Err(DuplicatedKeyError);
@@ -125,11 +125,11 @@ impl ConsistentHash {
 mod consistent_hash_test {
     use crate::Node;
 
-    use super::ConsistentHash;
+    use super::ConsistentHashing;
 
     #[test]
     fn simple() {
-        let mut balancer = ConsistentHash::new(
+        let mut balancer = ConsistentHashing::new(
             vec![
                 Node::new_with_default_weight("1".to_string()),
                 Node::new_with_default_weight("2".to_string()),

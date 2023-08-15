@@ -2,25 +2,27 @@
 
 A rust library that implements load balancing algorithms.
 
-- round-robin
-- weighted round-robin(like nginx)
+- round robin
+- weighted round robin(like nginx)
 - random
+- consistent hashing
 
-### installation
+### Installation
 ```shell
 cargo add rsbalancer
 ```
 
-### usage
+### Usage
 
+### Weighted round robin
 ```rust
-use rsbalancer::{BalancerEnum, Node};
+use rsbalancer::{BalancerEnum, Node, Balancer};
 
 fn main() {
-    let mut balancer = rsbalancer::new(BalancerEnum::RR, vec![
-        Node::new_with_default_weight(1),
-        Node::new_with_default_weight(2),
-        Node::new_with_default_weight(3),
+    let mut balancer = rsbalancer::weighted_round_robin(vec![
+        Node::new("ip1", 1), // ip、weight
+        Node::new("ip2", 1),
+        Node::new("ip3", 2),
     ]);
 
     for _ in 0..10 {
@@ -29,4 +31,33 @@ fn main() {
 }
 ```
 
+### Consistent hashing
+```rust
+use rsbalancer::Node;
 
+fn main() {
+    // number of virtual nodes = node.weight * replicas
+    let balancer = rsbalancer::consistent_hashing(
+        vec![
+            Node::new("ip1".to_string(), 1), // ip、weight
+            Node::new("ip2".to_string(), 1),
+            Node::new("ip3".to_string(), 1),
+        ],
+        160, //replicas
+    );
+
+    for random_ip in 0..10 {
+        println!(
+            "{} == {}",
+            balancer
+                .get_matching_node(random_ip.to_string())
+                .unwrap()
+                .get_id(),
+            balancer
+                .get_matching_node(random_ip.to_string())
+                .unwrap()
+                .get_id()
+        );
+    }
+}
+```

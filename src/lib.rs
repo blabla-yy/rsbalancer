@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use consistent_hash::ConsistentHash;
+use consistent_hash::ConsistentHashing;
 
 use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::random::Random;
@@ -21,6 +21,7 @@ pub trait Balancer<T: Hash + Eq + Clone> {
     fn get_node(&self, id: &T) -> Option<&Node<T>>;
     fn get_nodes(&self) -> Vec<&Node<T>>;
 
+    /// unstable
     fn set_down(&mut self, id: &T, down: bool) -> Result<(), NotFoundError>;
 
     fn next(&mut self) -> Option<&Node<T>>;
@@ -103,9 +104,9 @@ pub fn random<T: Hash + Eq + Clone>(nodes: Vec<Node<T>>) -> Random<T> {
     Random::new(nodes)
 }
 
-/// ConsistentHash
+/// ConsistentHashing
 /// number of virtual nodes: replicas * node.weight.
 /// node.down does not work in ConsistentHash now.
-pub fn consistent_hash(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHash {
-    ConsistentHash::new(nodes, replicas)
+pub fn consistent_hashing(nodes: Vec<Node<String>>, replicas: usize) -> ConsistentHashing {
+    ConsistentHashing::new(nodes, replicas)
 }
