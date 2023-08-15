@@ -1,13 +1,13 @@
 use std::hash::Hash;
 
-use consistent_hash::ConsistentHashing;
+use consistent_hashing::ConsistentHashing;
 
 use crate::errors::{DuplicatedKeyError, NotFoundError};
 use crate::random::Random;
 use crate::round_robin::RoundRobin;
 use crate::weighted_round_robin::WeightedRoundRobin;
 
-mod consistent_hash;
+mod consistent_hashing;
 mod errors;
 mod nodes;
 mod random;

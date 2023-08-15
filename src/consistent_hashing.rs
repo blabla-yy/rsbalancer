@@ -135,7 +135,7 @@ impl ConsistentHashing {
 }
 
 #[cfg(test)]
-mod consistent_hash_test {
+mod consistent_hashing_test {
     use crate::Node;
 
     use super::ConsistentHashing;
@@ -179,6 +179,39 @@ mod consistent_hash_test {
                 Node::new_with_default_weight("3".to_string()),
             ],
             10,
+        );
+        let ip = vec!["123", "234", "122"];
+        let mut nodes = Vec::with_capacity(3);
+        for item in &ip {
+            let result = balancer.get_matching_node(item.to_string()).unwrap();
+            println!("ip result: {}", result.id);
+            for _ in 0..10 {
+                assert_eq!(
+                    result.id,
+                    balancer.get_matching_node(item.to_string()).unwrap().id
+                );
+            }
+            nodes.push(result.id.clone());
+        }
+
+        balancer.remove_node(&nodes.first().unwrap()).unwrap();
+        assert_eq!(2, balancer.get_nodes().len());
+
+        let balancer = balancer;
+        let first_ip = ip.first().unwrap();
+        let node = balancer.get_matching_node(first_ip.to_string()).unwrap();
+        assert_ne!(node.id, nodes.first().unwrap().clone());
+    }
+
+    #[test]
+    fn zero_weight_and_replicas() {
+        let mut balancer = ConsistentHashing::new(
+            vec![
+                Node::new("1".to_string(), 0),
+                Node::new("2".to_string(), 0),
+                Node::new("3".to_string(), 0),
+            ],
+            0,
         );
         let ip = vec!["123", "234", "122"];
         let mut nodes = Vec::with_capacity(3);
